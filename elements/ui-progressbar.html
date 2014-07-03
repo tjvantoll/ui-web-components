@@ -1,0 +1,142 @@
+<link href="../bower_components/jquery-ui/themes/smoothness/core.css" rel="stylesheet">
+<link href="../bower_components/jquery-ui/themes/smoothness/theme.css" rel="stylesheet">
+<script src="../bower_components/jquery/dist/jquery.js"></script>
+
+<style>
+	ui-progressbar {
+		display: block;
+		height: 2em;
+		text-align: left;
+		overflow: hidden;
+	}
+	ui-progressbar .ui-progressbar-value {
+		margin: -1px;
+		height: 100%;
+	}
+	ui-progressbar .ui-progressbar-overlay {
+		background: url("../bower_components/jquery-ui/themes/smoothness/images/animated-overlay.gif");
+		height: 100%;
+		filter: alpha(opacity=25);
+		opacity: 0.25;
+	}
+	ui-progressbar-indeterminate .ui-progressbar-value {
+		background-image: none;
+	}
+</style>
+<script>
+	var proto = Object.create( HTMLElement.prototype );
+	$.extend( proto, {
+		createdCallback: function() {
+			var value;
+			this.min = 0;
+
+			this.element = $( this )
+				.addClass( "ui-widget ui-widget-content ui-corner-all" )
+				.attr({
+					role: "progressbar",
+					"aria-valuemin": this.min
+				});
+
+			// There HAS to be a better way of doing this... right?
+			// Polymer has the "attributes" attribute, but that's not a
+			// part of the platform.
+			value = this.element.attr( "value" );
+			this.value = value === "false" ? false :
+				parseInt( value, 10 );
+			this.max = parseInt( this.element.attr( "max" ), 10 );
+			this._handleDisabled( this.element.is( "[disabled]" ) );
+
+			// Constrain initial value
+			this.oldValue = this.value = this._constrainedValue();
+
+			this.valueDiv = $( "<div class='ui-progressbar-value ui-widget-header ui-corner-left'></div>" )
+				.appendTo( this.element );
+
+			this._refreshValue();
+		},
+
+		attributeChangedCallback: function( name, oldValue, newValue ) {
+			if ( name === "value" ) {
+				this.value = newValue === "false" ? false :
+					parseInt( newValue, 10 );
+				this.value = this._constrainedValue( this.value );
+			}
+			if ( name === "max" ) {
+				// Don't allow a max less than min
+				this.max = Math.max( this.min, parseInt( newValue, 10 ) );
+			}
+			if ( name === "disabled" ) {
+				this._handleDisabled( this.element.is( "[disabled]" ) );
+			}
+			this._refreshValue();
+		},
+
+		_handleDisabled: function( value ) {
+			this.element
+				.toggleClass( "ui-state-disabled", !!value )
+				.attr( "aria-disabled", value );
+			this.disabled = !!value;
+		},
+
+		_percentage: function() {
+			return this.indeterminate ? 100 : 100 * ( this.value - this.min ) / ( this.max - this.min );
+		},
+
+		_constrainedValue: function( newValue ) {
+			if ( newValue === undefined ) {
+				newValue = this.value;
+			}
+
+			this.indeterminate = newValue === false;
+
+			// sanitize value
+			if ( typeof newValue !== "number" ) {
+				newValue = 0;
+			}
+
+			return this.indeterminate ? false :
+				Math.min( this.max, Math.max( this.min, newValue ) );
+		},
+
+		_refreshValue: function() {
+			var value = this.value,
+				percentage = this._percentage();
+
+			this.valueDiv
+				.toggle( this.indeterminate || value > this.min )
+				.toggleClass( "ui-corner-right", value === this.max )
+				.width( percentage.toFixed(0) + "%" );
+
+			this.element.toggleClass( "ui-progressbar-indeterminate", this.indeterminate );
+
+			if ( this.indeterminate ) {
+				this.element.removeAttr( "aria-valuenow" );
+				if ( !this.overlayDiv ) {
+					this.overlayDiv = $( "<div class='ui-progressbar-overlay'></div>" ).appendTo( this.valueDiv );
+				}
+			} else {
+				this.element.attr({
+					"aria-valuemax": this.max,
+					"aria-valuenow": value
+				});
+				if ( this.overlayDiv ) {
+					this.overlayDiv.remove();
+					this.overlayDiv = null;
+				}
+			}
+
+			if ( this.oldValue !== value ) {
+				this.oldValue = value;
+				this.element.trigger( "change" );
+			}
+			if ( value === this.max ) {
+				this.element.trigger( "complete" );
+			}
+		}
+	});
+
+	$.ui = {};
+	$.ui.progressbar = document.registerElement( "ui-progressbar", {
+		prototype: proto
+	});
+</script>
