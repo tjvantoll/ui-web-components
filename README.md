@@ -1,4 +1,4 @@
-ui-web-components
+jQuery UI + Web Components
 =================
 
-Proof of concept for the jQuery UI widgets + web components
+A proof of concept rewrite of the jQuery UI widgets to use web components.
