@@ -1,8 +1,6 @@
-<link rel="import" href="../bower_components/polymer/polymer.html">
-<link href="../bower_components/jquery-ui/themes/smoothness/jquery-ui.css" rel="stylesheet">
-<script src="../bower_components/jquery/dist/jquery.js"></script>
+<link rel="import" href="ui-widget-polymer.html">
 
-<polymer-element name="ui-progressbar-polymer">
+<polymer-element name="ui-progressbar-polymer" extends="ui-widget-polymer">
 	<style>
 		ui-progressbar-polymer {
 			display: block;
@@ -34,8 +32,9 @@
 			},
 
 			attached: function() {
+				this.super();
 				var value;
-				this.element = $( this )
+				this.element
 					.addClass( "ui-widget ui-widget-content ui-corner-all" )
 					.attr({
 						role: "progressbar",

@@ -1,0 +1,18 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link href="../bower_components/jquery-ui/themes/smoothness/jquery-ui.css" rel="stylesheet">
+<script src="../bower_components/jquery/dist/jquery.js"></script>
+
+<polymer-element name="ui-widget-polymer">
+	<style>
+		/* TODO: Put core.css and theme.css in here? */
+	</style>
+	<script>
+		Polymer( "ui-widget-polymer", {
+			attached: function() {
+				this.element = $( this );
+				this.document = $( this );
+				this.window = $( this );
+			}
+		});
+	</script>
+</polymer-element>
