@@ -1,0 +1,20 @@
+<link href="../bower_components/jquery-ui/themes/smoothness/core.css" rel="stylesheet">
+<link href="../bower_components/jquery-ui/themes/smoothness/theme.css" rel="stylesheet">
+<script src="../bower_components/jquery/dist/jquery.js"></script>
+
+<script>
+	var proto = Object.create( HTMLElement.prototype );
+	$.extend( proto, {
+		init: function() {
+			this.element = $( this );
+			this.document = $( document );
+			this.window = $( window );
+		}
+	});
+
+	$.ui = $.ui || {};
+	$.ui.widget = proto;
+	document.registerElement( "ui-widget", {
+		prototype: proto
+	});
+</script>

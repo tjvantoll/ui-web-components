@@ -1,6 +1,4 @@
-<link href="../bower_components/jquery-ui/themes/smoothness/core.css" rel="stylesheet">
-<link href="../bower_components/jquery-ui/themes/smoothness/theme.css" rel="stylesheet">
-<script src="../bower_components/jquery/dist/jquery.js"></script>
+<link rel="import" href="ui-widget.html">
 
 <style>
 	ui-progressbar {
@@ -24,13 +22,17 @@
 	}
 </style>
 <script>
-	var proto = Object.create( HTMLElement.prototype );
+	var proto = Object.create( $.ui.widget );
+
 	$.extend( proto, {
 		createdCallback: function() {
+			// TODO: Wire up some sort of super() mechanism?
+			this.init();
+
 			var value;
 			this.min = 0;
 
-			this.element = $( this )
+			this.element
 				.addClass( "ui-widget ui-widget-content ui-corner-all" )
 				.attr({
 					role: "progressbar",
@@ -139,7 +141,6 @@
 		}
 	});
 
-	$.ui = {};
 	$.ui.progressbar = document.registerElement( "ui-progressbar", {
 		prototype: proto
 	});
