@@ -159,6 +159,71 @@ Polymer( "ui-dialog", {
 		this.initialized = true;
 	},
 
+	attributeChanged: function( name, oldValue, newValue ) {
+		if ( !this.initialized ) {
+			return;
+		}
+
+		var isDraggable, isResizable,
+			uiDialog = this.uiDialog;
+
+		if ( name === "disabled" ) {
+			return;
+		}
+
+		if ( name === "appendTo" ) {
+			this.uiDialog.appendTo( this._appendTo() );
+		}
+
+		if ( name === "buttons" ) {
+			this._createButtons();
+		}
+
+		if ( name === "closeText" ) {
+			this.uiDialogTitlebarClose.button({
+				// Ensure that we always pass a string
+				label: "" + value
+			});
+		}
+
+		if ( name === "draggable" ) {
+			isDraggable = uiDialog.is( ":data(ui-draggable)" );
+			if ( isDraggable && !newValue ) {
+				uiDialog.draggable( "destroy" );
+			}
+
+			if ( !isDraggable && newValue ) {
+				this._makeDraggable();
+			}
+		}
+
+		if ( name === "position" ) {
+			this._position();
+		}
+
+		if ( name === "resizable" ) {
+			// currently resizable, becoming non-resizable
+			isResizable = uiDialog.is( ":data(ui-resizable)" );
+			if ( isResizable && !newValue ) {
+				uiDialog.resizable( "destroy" );
+			}
+
+			// currently resizable, changing handles
+			if ( isResizable && typeof newValue === "string" ) {
+				uiDialog.resizable( "option", "handles", newValue );
+			}
+
+			// currently non-resizable, becoming resizable
+			if ( !isResizable && newValue !== false ) {
+				this._makeResizable();
+			}
+		}
+
+		if ( name === "title" ) {
+			this._title( this.uiDialogTitlebar.find( ".ui-dialog-title" ) );
+		}
+	},
+
 	_createWrapper: function() {
 		this.uiDialog = $( "<div>" )
 			.addClass( "ui-dialog ui-widget ui-widget-content ui-corner-all ui-front" )
