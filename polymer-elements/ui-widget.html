@@ -11,8 +11,8 @@
 		Polymer( "ui-widget", {
 			attached: function() {
 				this.element = $( this );
-				this.document = $( this );
-				this.window = $( this );
+				this.document = $( this.document );
+				this.window = $( this.window );
 			}
 		});
 	</script>
