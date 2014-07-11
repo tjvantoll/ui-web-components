@@ -3,6 +3,10 @@
 <!-- For now -->
 <script src="../bower_components/jquery-ui/ui/widget.js"></script>
 <script src="../bower_components/jquery-ui/ui/button.js"></script>
+<script src="../bower_components/jquery-ui/ui/position.js"></script>
+<script src="../bower_components/jquery-ui/ui/mouse.js"></script>
+<script src="../bower_components/jquery-ui/ui/draggable.js"></script>
+<script src="../bower_components/jquery-ui/ui/resizable.js"></script>
 
 <polymer-element name="ui-dialog" extends="ui-widget">
 
@@ -10,7 +14,6 @@
 	.ui-dialog {
 		overflow: hidden;
 		position: absolute;
-		display: block;
 		top: 0;
 		left: 0;
 		padding: .2em;
@@ -39,6 +42,7 @@
 	}
 	.ui-dialog .ui-dialog-content {
 		position: relative;
+		display: block;
 		border: 0;
 		padding: .5em 1em;
 		background: none;
@@ -86,7 +90,20 @@ Polymer( "ui-dialog", {
 		minHeight: 150,
 		minWidth: 150,
 		modal: false,
-		position: {
+		resizable: true,
+		show: null,
+		title: null,
+		width: 300
+	},
+
+	created: function() {
+		this.super();
+
+		// TODO: Why does this not default to true???
+		this.draggable = true;
+
+		// TODO: What to do about this?
+		this.position = {
 			my: "center",
 			at: "center",
 			of: window,
@@ -98,15 +115,8 @@ Polymer( "ui-dialog", {
 					$( this ).css( "top", pos.top - topOffset );
 				}
 			}
-		},
-		resizable: true,
-		show: null,
-		title: null,
-		width: 300
-	},
+		};
 
-	attached: function() {
-		this.super();
 		this.originalCss = {
 			display: this.element[ 0 ].style.display,
 			width: this.element[ 0 ].style.width,
@@ -125,7 +135,6 @@ Polymer( "ui-dialog", {
 
 		this.element
 			.show()
-			.removeAttr( "title" )
 			.addClass( "ui-dialog-content ui-widget-content" )
 			.appendTo( this.uiDialog );
 
@@ -142,6 +151,11 @@ Polymer( "ui-dialog", {
 		this._isOpen = false;
 
 		this._trackFocus();
+
+		if ( this.autoOpen ) {
+			this.open();
+		}
+
 		this.initialized = true;
 	},
 
@@ -156,9 +170,10 @@ Polymer( "ui-dialog", {
 			})
 			.appendTo( this._appendTo() );
 
+		var that = this;
 		this.uiDialog.on({
 			keydown: function( event ) {
-				if ( this.options.closeOnEscape && !event.isDefaultPrevented() && event.keyCode &&
+				if ( this.closeOnEscape && !event.isDefaultPrevented() && event.keyCode &&
 						event.keyCode === $.ui.keyCode.ESCAPE ) {
 					event.preventDefault();
 					this.close( event );
@@ -186,8 +201,8 @@ Polymer( "ui-dialog", {
 				}
 			},
 			mousedown: function( event ) {
-				if ( this._moveToTop( event ) ) {
-					this._focusTabbable();
+				if ( that._moveToTop( event ) ) {
+					that._focusTabbable();
 				}
 			}
 		});
@@ -241,10 +256,12 @@ Polymer( "ui-dialog", {
 			})
 			.addClass( "ui-dialog-titlebar-close" )
 			.appendTo( this.uiDialogTitlebar );
+
+		var that = this;
 		this.uiDialogTitlebarClose.on({
 			click: function( event ) {
 				event.preventDefault();
-				this.close( event );
+				that.close( event );
 			}
 		});
 
@@ -317,11 +334,12 @@ Polymer( "ui-dialog", {
 	},
 
 	_trackFocus: function() {
+		var that = this;
 		this.widget().on({
 			"focusin": function( event ) {
-				this._untrackInstance();
-				this._trackingInstances().unshift( this );
-				this._focusedElement = $( event.target );
+				that._untrackInstance();
+				that._trackingInstances().unshift( that );
+				that._focusedElement = $( event.target );
 			}
 		});
 	},
@@ -346,6 +364,333 @@ Polymer( "ui-dialog", {
 	widget: function() {
 		return this.uiDialog;
 	},
+
+	open: function() {
+		var that = this;
+		if ( this._isOpen ) {
+			if ( this._moveToTop() ) {
+				this._focusTabbable();
+			}
+			return;
+		}
+
+		this._isOpen = true;
+		this.opener = $( this.document[ 0 ].activeElement );
+
+		this._size();
+		this._position();
+		this._createOverlay();
+		this._moveToTop( null, true );
+		this.uiDialog.show( this.show, function() {
+			that._focusTabbable();
+			that.element.trigger( "focus" );
+		});
+
+		this.element.trigger( "open" );
+	},
+
+	_size: function() {
+		// If the user has resized the dialog, the .ui-dialog and .ui-dialog-content
+		// divs will both have width and height set, so we need to reset them
+		var nonContentHeight, minContentHeight, maxContentHeight;
+
+		// Reset content sizing
+		this.element.show().css({
+			width: "auto",
+			minHeight: 0,
+			maxHeight: "none",
+			height: 0
+		});
+
+		if ( this.minWidth > this.width ) {
+			this.width = this.minWidth;
+		}
+
+		// reset wrapper sizing
+		// determine the height of all the non-content elements
+		nonContentHeight = this.uiDialog.css({
+				height: "auto",
+				width: this.width
+			})
+			.outerHeight();
+		minContentHeight = Math.max( 0, this.minHeight - nonContentHeight );
+		maxContentHeight = typeof this.maxHeight === "number" ?
+			Math.max( 0, this.maxHeight - nonContentHeight ) :
+			"none";
+
+		if ( this.height === "auto" ) {
+			this.element.css({
+				minHeight: minContentHeight,
+				maxHeight: maxContentHeight,
+				height: "auto"
+			});
+		} else {
+			this.element.height( Math.max( 0, this.height - nonContentHeight ) );
+		}
+
+		if ( this.uiDialog.is( ":data(ui-resizable)" ) ) {
+			this.uiDialog.resizable( "option", "minHeight", this._minHeight() );
+		}
+	},
+
+	_position: function() {
+		// Need to show the dialog to get the actual offset in the position plugin
+		var isVisible = this.uiDialog.is( ":visible" );
+		if ( !isVisible ) {
+			this.uiDialog.show();
+		}
+		console.log( this.position );
+		this.uiDialog.position( this.position );
+		if ( !isVisible ) {
+			this.uiDialog.hide();
+		}
+	},
+
+	_createOverlay: function() {
+		if ( !this.modal ) {
+			return;
+		}
+
+		// We use a delay in case the overlay is created from an
+		// event that we're going to be cancelling (#2804)
+		var isOpening = true;
+		this._delay(function() {
+			isOpening = false;
+		});
+
+		if ( !this.document.data( "ui-dialog-overlays" ) ) {
+
+			// Prevent use of anchors and inputs
+			// Using _on() for an event handler shared across many instances is
+			// safe because the dialogs stack and must be closed in reverse order
+			this._on( this.document, {
+				focusin: function( event ) {
+					if ( isOpening ) {
+						return;
+					}
+
+					if ( !this._allowInteraction( event ) ) {
+						event.preventDefault();
+						this._trackingInstances()[ 0 ]._focusTabbable();
+					}
+				}
+			});
+		}
+
+		this.overlay = $( "<div>" )
+			.addClass( "ui-widget-overlay ui-front" )
+			.appendTo( this._appendTo() );
+		this._on( this.overlay, {
+			mousedown: "_keepFocus"
+		});
+		this.document.data( "ui-dialog-overlays",
+			(this.document.data( "ui-dialog-overlays" ) || 0) + 1 );
+	},
+
+	_destroyOverlay: function() {
+		if ( !this.modal ) {
+			return;
+		}
+
+		if ( this.overlay ) {
+			var overlays = this.document.data( "ui-dialog-overlays" ) - 1;
+
+			if ( !overlays ) {
+				this.document
+					.unbind( "focusin" )
+					.removeData( "ui-dialog-overlays" );
+			} else {
+				this.document.data( "ui-dialog-overlays", overlays );
+			}
+
+			this.overlay.remove();
+			this.overlay = null;
+		}
+	},
+
+	moveToTop: function() {
+		this._moveToTop();
+	},
+
+	_moveToTop: function( event, silent ) {
+		var moved = false,
+			zIndicies = this.uiDialog.siblings( ".ui-front:visible" ).map(function() {
+				return +$( this ).css( "z-index" );
+			}).get(),
+			zIndexMax = Math.max.apply( null, zIndicies );
+
+		if ( zIndexMax >= +this.uiDialog.css( "z-index" ) ) {
+			this.uiDialog.css( "z-index", zIndexMax + 1 );
+			moved = true;
+		}
+
+		if ( moved && !silent ) {
+			this.element.trigger( "focus", event );
+		}
+		return moved;
+	},
+
+	close: function( event ) {
+		var activeElement,
+			that = this;
+
+		if ( !this._isOpen || this.element.trigger( "beforeClose", event ) === false ) {
+			return;
+		}
+
+		this._isOpen = false;
+		this._focusedElement = null;
+		this._destroyOverlay();
+		this._untrackInstance();
+
+		if ( !this.opener.filter( ":focusable" ).focus().length ) {
+
+			// support: IE9
+			// IE9 throws an "Unspecified error" accessing document.activeElement from an <iframe>
+			try {
+				activeElement = this.document[ 0 ].activeElement;
+
+				// Support: IE9, IE10
+				// If the <body> is blurred, IE will switch windows, see #4520
+				if ( activeElement && activeElement.nodeName.toLowerCase() !== "body" ) {
+
+					// Hiding a focused element doesn't trigger blur in WebKit
+					// so in case we have nothing to focus on, explicitly blur the active element
+					// https://bugs.webkit.org/show_bug.cgi?id=47182
+					$( activeElement ).blur();
+				}
+			} catch ( error ) {}
+		}
+
+		this.uiDialog.hide( this.hide, function() {
+			that.element.trigger( "close", event );
+		});
+	},
+
+	_makeDraggable: function() {
+		var that = this,
+			options = this.options;
+
+		function filteredUi( ui ) {
+			return {
+				position: ui.position,
+				offset: ui.offset
+			};
+		}
+
+		this.uiDialog.draggable({
+			cancel: ".ui-dialog-content, .ui-dialog-titlebar-close",
+			handle: ".ui-dialog-titlebar",
+			containment: "document",
+			start: function( event, ui ) {
+				$( this ).addClass( "ui-dialog-dragging" );
+				that._blockFrames();
+				that.element.trigger( "dragStart", event, filteredUi( ui ) );
+			},
+			drag: function( event, ui ) {
+				that.element.trigger( "drag", event, filteredUi( ui ) );
+			},
+			stop: function( event, ui ) {
+				var left = ui.offset.left - that.document.scrollLeft(),
+					top = ui.offset.top - that.document.scrollTop();
+
+				this.position = {
+					my: "left top",
+					at: "left" + (left >= 0 ? "+" : "") + left + " " +
+						"top" + (top >= 0 ? "+" : "") + top,
+					of: that.window
+				};
+				$( this ).removeClass( "ui-dialog-dragging" );
+				that._unblockFrames();
+				that.element.trigger( "dragStop", event, filteredUi( ui ) );
+			}
+		});
+	},
+
+	_makeResizable: function() {
+		var that = this,
+			handles = this.resizable,
+			// .ui-resizable has position: relative defined in the stylesheet
+			// but dialogs have to use absolute or fixed positioning
+			position = this.uiDialog.css("position"),
+			resizeHandles = typeof handles === "string" ?
+				handles	:
+				"n,e,s,w,se,sw,ne,nw";
+
+		function filteredUi( ui ) {
+			return {
+				originalPosition: ui.originalPosition,
+				originalSize: ui.originalSize,
+				position: ui.position,
+				size: ui.size
+			};
+		}
+
+		this.uiDialog.resizable({
+			cancel: ".ui-dialog-content",
+			containment: "document",
+			alsoResize: this.element,
+			maxWidth: this.maxWidth,
+			maxHeight: this.maxHeight,
+			minWidth: this.minWidth,
+			minHeight: this._minHeight(),
+			handles: resizeHandles,
+			start: function( event, ui ) {
+				$( this ).addClass( "ui-dialog-resizing" );
+				that._blockFrames();
+				that.element.trigger( "resizeStart", event, filteredUi( ui ) );
+			},
+			resize: function( event, ui ) {
+				that.element.trigger( "resize", event, filteredUi( ui ) );
+			},
+			stop: function( event, ui ) {
+				var offset = that.uiDialog.offset(),
+					left = offset.left - that.document.scrollLeft(),
+					top = offset.top - that.document.scrollTop();
+
+				this.height = that.uiDialog.height();
+				this.width = that.uiDialog.width();
+				this.position = {
+					my: "left top",
+					at: "left" + (left >= 0 ? "+" : "") + left + " " +
+						"top" + (top >= 0 ? "+" : "") + top,
+					of: that.window
+				};
+				$( this ).removeClass( "ui-dialog-resizing" );
+				that._unblockFrames();
+				that.element.trigger( "resizeStop", event, filteredUi( ui ) );
+			}
+		})
+		.css( "position", position );
+	},
+
+	_minHeight: function() {
+		return this.height === "auto" ?
+			this.minHeight :
+			Math.min( this.minHeight, this.height );
+	},
+
+	_blockFrames: function() {
+		this.iframeBlocks = this.document.find( "iframe" ).map(function() {
+			var iframe = $( this );
+
+			return $( "<div>" )
+				.css({
+					position: "absolute",
+					width: iframe.outerWidth(),
+					height: iframe.outerHeight()
+				})
+				.appendTo( iframe.parent() )
+				.offset( iframe.offset() )[0];
+		});
+	},
+
+	_unblockFrames: function() {
+		if ( this.iframeBlocks ) {
+			this.iframeBlocks.remove();
+			delete this.iframeBlocks;
+		}
+	}
 });
 </script>
 
