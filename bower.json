@@ -1,0 +1,23 @@
+{
+  "name": "ui-web-components",
+  "version": "0.0.0",
+  "homepage": "https://github.com/tjvantoll/ui-web-components",
+  "authors": [
+    "TJ VanToll <tj.vantoll@gmail.com>"
+  ],
+  "description": "Rewrite of the jQuery UI widgets using web components",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery-ui": "~1.11.0",
+    "jquery": "~2.1.1",
+    "polymer": "Polymer/polymer#~0.4.0"
+  }
+}
