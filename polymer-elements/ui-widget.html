@@ -8,12 +8,88 @@
 		/* TODO: Put core.css and theme.css in here? */
 	</style>
 	<script>
-		Polymer( "ui-widget", {
-			created: function() {
-				this.element = $( this );
-				this.document = $( document );
-				this.window = $( window );
-			}
-		});
+		(function ( window, document, undefined ) {
+			var widget_uuid = 0,
+				widget_slice = Array.prototype.slice;
+
+			Polymer( "ui-widget", {
+				widgetName: "widget",
+
+				created: function() {
+					this.element = $( this );
+					this.document = $( document );
+					this.window = $( window );
+					this.uuid = widget_uuid++;
+					this.eventNamespace = "." + this.widgetName + this.uuid;
+
+					this.bindings = $();
+					this.hoverable = $();
+					this.focusable = $();
+				},
+
+				widget: function() {
+					return this.element;
+				},
+
+				_on: function( suppressDisabledCheck, element, handlers ) {
+					var delegateElement,
+						instance = this;
+
+					// no suppressDisabledCheck flag, shuffle arguments
+					if ( typeof suppressDisabledCheck !== "boolean" ) {
+						handlers = element;
+						element = suppressDisabledCheck;
+						suppressDisabledCheck = false;
+					}
+
+					// no element argument, shuffle and use this.element
+					if ( !handlers ) {
+						handlers = element;
+						element = this.element;
+						delegateElement = this.widget();
+					} else {
+						element = delegateElement = $( element );
+						this.bindings = this.bindings.add( element );
+					}
+
+					$.each( handlers, function( event, handler ) {
+						function handlerProxy() {
+							// TODO: Need to figure out what to do with instance.options
+							// allow widgets to customize the disabled handling
+							// - disabled as an array instead of boolean
+							// - disabled class as method for disabling individual parts
+							// if ( !suppressDisabledCheck &&
+							// 		( instance.options.disabled === true ||
+							// 			$( this ).hasClass( "ui-state-disabled" ) ) ) {
+							// 	return;
+							// }
+							return ( typeof handler === "string" ? instance[ handler ] : handler )
+								.apply( instance, arguments );
+						}
+
+						// TODO: Verify we're working with guid correctly
+						// copy the guid so direct unbinding works
+						if ( typeof handler !== "string" ) {
+							handlerProxy.guid = handler.guid =
+								handler.guid || handlerProxy.guid || $.guid++;
+						}
+
+						var match = event.match( /^([\w:-]*)\s*(.*)$/ ),
+							eventName = match[1] + instance.eventNamespace,
+							selector = match[2];
+						if ( selector ) {
+							delegateElement.delegate( selector, eventName, handlerProxy );
+						} else {
+							element.bind( eventName, handlerProxy );
+						}
+					});
+				},
+
+				_off: function( element, eventName ) {
+					eventName = (eventName || "").split( " " ).join( this.eventNamespace + " " ) + this.eventNamespace;
+					element.unbind( eventName ).undelegate( eventName );
+				}
+			});
+		})( window, document );
 	</script>
 </polymer-element>
