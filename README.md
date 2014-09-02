@@ -5,4 +5,4 @@ A proof-of-concept rewrite of the jQuery UI widgets to use web components.
 
 ### Demo
 
-See [this demo](http://jsfiddle.net/tj_vantoll/5Bm7C/) to get an idea of what this looks like so far.
+See [this demo](https://rawgit.com/tjvantoll/ui-web-components/master/polymer-based.html) to get an idea of what this looks like so far.
