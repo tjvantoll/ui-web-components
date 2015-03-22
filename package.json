@@ -5,7 +5,7 @@
   "main": "demos/platform-based.html",
   "devDependencies": {
     "grunt": "0.4.2",
-    "grunt-vulcanize": "0.4.1"
+    "grunt-vulcanize": "0.6.4"
   },
   "repository": {
     "type": "git",
