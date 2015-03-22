@@ -5,7 +5,7 @@
   "authors": [
     "TJ VanToll <tj.vantoll@gmail.com>"
   ],
-  "description": "Rewrite of the jQuery UI widgets using web components",
+  "description": "POC rewrite of the jQuery UI widgets using web components",
   "license": "MIT",
   "private": true,
   "ignore": [
@@ -16,8 +16,8 @@
     "tests"
   ],
   "dependencies": {
-    "jquery-ui": "~1.11.0",
-    "jquery": "~2.1.1",
+    "jquery-ui": "~1.11.4",
+    "jquery": "~2.1.3",
     "polymer": "Polymer/polymer#~0.4.0"
   }
 }

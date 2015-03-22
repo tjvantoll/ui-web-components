@@ -1,13 +1,12 @@
 {
   "name": "ui-web-components",
   "version": "0.0.0",
-  "description": "Rewrite of the jQuery UI widgets using web components",
-  "main": "index.html",
-  "dependencies": {
+  "description": "POC rewrite of the jQuery UI widgets using web components",
+  "main": "demos/platform-based.html",
+  "devDependencies": {
     "grunt": "0.4.2",
     "grunt-vulcanize": "0.4.1"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git://github.com/tjvantoll/ui-web-components.git"
