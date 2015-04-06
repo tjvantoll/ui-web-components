@@ -3,7 +3,7 @@
 <script src="../bower_components/jquery/dist/jquery.js"></script>
 <script src="../bower_components/jquery-ui/ui/core.js"></script>
 
-<polymer-element name="ui-widget">
+<dom-module id="ui-widget">
 	<style>
 		/* TODO: Put core.css and theme.css in here? */
 	</style>
@@ -12,10 +12,8 @@
 			var widget_uuid = 0,
 				widget_slice = Array.prototype.slice;
 
-			Polymer( "ui-widget", {
-				widgetName: "widget",
-
-				created: function() {
+			window.Widget = {
+				baseCreated: function() {
 					this.element = $( this );
 					this.document = $( document );
 					this.window = $( window );
@@ -89,7 +87,7 @@
 					eventName = (eventName || "").split( " " ).join( this.eventNamespace + " " ) + this.eventNamespace;
 					element.unbind( eventName ).undelegate( eventName );
 				}
-			});
+			};
 		})( window, document );
 	</script>
-</polymer-element>
+</dom-module>

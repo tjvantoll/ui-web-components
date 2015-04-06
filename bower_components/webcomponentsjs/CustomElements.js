@@ -7,7 +7,7 @@
  * Code distributed by Google as part of the polymer project is also
  * subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
  */
-// @version 0.5.5
+// @version 0.6.0
 if (typeof WeakMap === "undefined") {
   (function() {
     var defineProperty = Object.defineProperty;
@@ -221,7 +221,7 @@ CustomElements.addModule(function(scope) {
       if (p == doc) {
         return true;
       }
-      p = p.parentNode || p.host;
+      p = p.parentNode || p.nodeType === Node.DOCUMENT_FRAGMENT_NODE && p.host;
     }
   }
   function watchShadow(node) {
@@ -571,6 +571,21 @@ CustomElements.addModule(function(scope) {
   var useNative = scope.useNative;
   var initializeModules = scope.initializeModules;
   var isIE11OrOlder = /Trident/.test(navigator.userAgent);
+  if (isIE11OrOlder) {
+    (function() {
+      var importNode = document.importNode;
+      document.importNode = function() {
+        var n = importNode.apply(document, arguments);
+        if (n.nodeType == n.DOCUMENT_FRAGMENT_NODE) {
+          var f = document.createDocumentFragment();
+          f.appendChild(n);
+          return f;
+        } else {
+          return n;
+        }
+      };
+    })();
+  }
   if (useNative) {
     var nop = function() {};
     scope.watchShadow = nop;
